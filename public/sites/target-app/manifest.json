@@ -1,0 +1,17 @@
+{
+  "name": "تارگت — دستیار مالی نسل Z",
+  "short_name": "Target",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#F6F4FB",
+  "theme_color": "#7C3AED",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://api.iconify.design/fluent-emoji:bullseye.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

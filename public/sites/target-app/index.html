@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>تارگت | Target PWA</title>
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#F6F4FB">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="تارگت">
+
+    <!-- Vendored dependencies — no CDN required, works fully offline -->
+    <script src="vendor/tailwind.js"></script>
+    <script src="vendor/confetti.browser.min.js"></script>
+    <script src="vendor/lucide.min.js"></script>
+
+    <style type="text/tailwindcss">
+        @font-face {
+            font-family: 'Vazirmatn';
+            src: url('vendor/fonts/Vazirmatn-var.woff2') format('woff2-variations');
+            font-weight: 100 900;
+            font-display: swap;
+        }
+        @theme {
+            --font-sans: 'Vazirmatn', sans-serif;
+            --color-app-bg: #F6F4FB;
+            --color-app-card: #FFFFFF;
+            --color-app-purple: #7C3AED;
+            --color-app-pink: #F43F5E;
+            --color-app-emerald: #059669;
+            --color-app-amber: #D97706;
+            --color-app-yellow: #F59E0B;
+            --color-app-cyan: #06B6D4;
+        }
+    </style>
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background: radial-gradient(circle at 50% 0%, #EDE9FE 0%, #F6F4FB 55%, #E8EFFF 100%);
+            color: #312E5A;
+            min-height: 100vh;
+        }
+        .glow-circle {
+            filter: drop-shadow(0 0 14px rgba(5, 150, 105, 0.3));
+        }
+        .glow-purple {
+            box-shadow: 0 0 44px -8px rgba(124, 58, 237, 0.2);
+        }
+        .glow-card {
+            box-shadow: 0 10px 30px -12px rgba(30, 20, 70, 0.14), 0 0 15px -3px rgba(124, 58, 237, 0.08);
+        }
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        /* Hide scrollbars */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Motion design */
+        @keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes pop-in { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: scale(1); } }
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes toast-in { from { opacity: 0; transform: translate(-50%, -14px); } to { opacity: 1; transform: translate(-50%, 0); } }
+        .sheet-anim { animation: sheet-up .32s cubic-bezier(.32,.72,.35,1) both; }
+        .pop-anim { animation: pop-in .22s cubic-bezier(.34,1.56,.64,1) both; }
+        .fade-anim { animation: fade-in .2s ease both; }
+        #toast { animation: toast-in .25s ease both; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes float { 50% { transform: translateY(26px) scale(1.06); } }
+        @keyframes shine-move { 0%,55% { left: -70%; } 100% { left: 140%; } }
+        @keyframes tab-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+        @keyframes flicker { 0%,100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(245,158,11,.5)); } 50% { transform: scale(1.18); filter: drop-shadow(0 0 7px rgba(245,158,11,.95)); } }
+        .ring-halo { background: conic-gradient(from 0deg, transparent 0deg, rgba(5,150,105,.32) 70deg, rgba(124,58,237,.26) 150deg, rgba(5,150,105,0) 240deg); filter: blur(28px); animation: spin 7s linear infinite; border-radius: 9999px; }
+        .orb-a { animation: float 9s ease-in-out infinite; }
+        .orb-b { animation: float 13s ease-in-out infinite reverse; }
+        .btn-shine { position: relative; overflow: hidden; }
+        .btn-shine::after { content: ''; position: absolute; top: 0; left: -70%; width: 45%; height: 100%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.5), transparent); transform: skewX(-20deg); animation: shine-move 3.4s ease-in-out infinite; pointer-events: none; }
+        .nav-item { padding: 6px 12px; border-radius: 18px; transition: all .25s ease; }
+        .nav-active { background: linear-gradient(135deg, rgba(139,92,246,.28), rgba(16,185,129,.18)); box-shadow: inset 0 0 0 1px rgba(139,92,246,.4), 0 6px 16px -6px rgba(139,92,246,.5); }
+        .text-gradient { background: linear-gradient(90deg, #7C3AED, #DB2777, #D97706); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .badge-earned { position: relative; overflow: hidden; }
+        .badge-earned::before { content: ''; position: absolute; inset: 0; background: radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,.09), transparent 60%); pointer-events: none; }
+        .badge-locked { filter: grayscale(1); opacity: .5; }
+        .flame { display: inline-block; animation: flicker 2.2s ease-in-out infinite; }
+        .tab-content { animation: tab-in .3s ease both; }
+        /* Small-phone refinements */
+        @media (max-width: 380px) {
+            .goal-chip { padding-left: 10px; padding-right: 10px; font-size: 11px; }
+            #tab-home .text-lg { font-size: 16px; }
+        }
+        #total-wallet, #goal-main-saved, #goal-main-target { font-variant-numeric: tabular-nums; }
+    </style>
+</head>
+<body class="flex justify-center items-center sm:py-6 sm:px-4">
+
+    <!-- Mobile Device Container (App Shell) -->
+    <main class="w-full sm:max-w-[420px] h-[100dvh] sm:h-[880px] bg-app-bg sm:rounded-[44px] overflow-hidden flex flex-col justify-between relative sm:border-4 sm:border-slate-200 shadow-2xl glow-purple">
+
+        <!-- Ambient Background Orbs -->
+        <div class="pointer-events-none absolute -top-24 -left-24 w-72 h-72 bg-app-purple/20 rounded-full blur-3xl orb-a"></div>
+        <div class="pointer-events-none absolute top-1/3 -right-28 w-80 h-80 bg-app-pink/10 rounded-full blur-3xl orb-b"></div>
+        <div class="pointer-events-none absolute -bottom-32 left-1/4 w-72 h-72 bg-app-emerald/10 rounded-full blur-3xl orb-a"></div>
+        
+        <!-- Top Status Bar & Header -->
+        <header class="pt-3 px-4 pb-2.5 bg-gradient-to-b from-white/85 to-transparent backdrop-blur-xl border-b border-purple-500/10 z-20 shrink-0">                <div class="flex items-center justify-between gap-2">
+                    <!-- User Profile & Level -->
+                    <div class="flex items-center gap-2 min-w-0">
+                        <div class="relative shrink-0">
+                            <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-app-pink via-app-purple to-app-yellow p-0.5 shadow-lg shadow-purple-500/25">
+                            <div class="w-full h-full bg-slate-50 rounded-[14px] flex items-center justify-center text-xl">
+                                🦊
+                            </div>
+                        </div>                        <span id="lvl-badge" class="absolute -bottom-1 -right-1 bg-app-yellow text-black font-black text-[10px] px-1.5 py-0.2 rounded-full border border-purple-200">Lvl ۲</span>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-1.5">
+                            <h1 class="font-extrabold text-sm text-slate-900 truncate">آرمان محمدی</h1>
+                            <span class="text-[10px] px-1.5 py-0.5 rounded-full font-bold border border-emerald-300 text-emerald-700 bg-emerald-50 whitespace-nowrap shrink-0">🎯 شکارچی</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-500 whitespace-nowrap">
+                            <span><span class="flame">🔥</span> زنجیره ۵ روزه</span>
+                            <span class="text-app-yellow font-bold" id="xp-text">۳۵۰ XP</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Balance Pill -->
+                <div class="text-left shrink-0 bg-purple-50 border border-purple-200 rounded-2xl px-2.5 py-1.5">
+                    <div class="text-[9px] text-purple-600 font-medium whitespace-nowrap">موجودی کل</div>
+                    <div id="total-wallet" class="text-[11px] font-black text-app-emerald whitespace-nowrap">۲٬۶۷۵٬۰۰۰ ت</div>
+                </div>
+            </div>
+            <!-- Level progress -->
+            <div class="mt-2 flex items-center gap-2">
+                <span class="text-[9px] text-slate-500 font-bold whitespace-nowrap">تا سطح بعد</span>
+                <div class="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                    <div id="xp-bar" class="h-full bg-gradient-to-r from-app-purple via-app-pink to-app-yellow rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Dynamic Screen Content Area -->
+        <div id="app-viewport" class="flex-1 overflow-y-auto no-scrollbar px-4 pb-32 pt-4 relative">
+            
+            <!-- TAB 1: 🏠 DASHBOARD (Active Target) -->
+            <section id="tab-home" class="tab-content space-y-5">
+                
+                <!-- Target Switcher Chips -->
+                <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                    <button onclick="switchGoal('headphone')" id="chip-headphone" class="goal-chip active-chip px-3.5 py-2 rounded-2xl text-xs font-black bg-gradient-to-r from-app-purple to-indigo-600 text-white shadow-md shadow-purple-500/20 whitespace-nowrap flex items-center gap-1.5 transition-all active:scale-95">
+                        <span>🎧</span> هدفون سونی
+                    </button>
+                    <button onclick="switchGoal('shoes')" id="chip-shoes" class="goal-chip px-3.5 py-2 rounded-2xl text-xs font-bold bg-app-card border border-slate-200 text-slate-500 whitespace-nowrap flex items-center gap-1.5 hover:text-slate-900 transition-all">
+                        <span>👟</span> کتونی نایک
+                    </button>
+                    <button onclick="openNewGoalModal()" id="chip-add-goal" class="px-3 py-2 rounded-2xl text-xs font-bold bg-slate-100 border border-dashed border-purple-400/50 text-purple-600 whitespace-nowrap flex items-center gap-1 hover:bg-purple-500/20 transition-all">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i> هدف جدید
+                    </button>
+                </div>
+
+                <!-- Main Target 3D-Feel Ring Card -->
+                <div class="bg-gradient-to-b from-app-card to-[#F8F6FE] rounded-[28px] p-4 sm:p-6 border border-purple-200/80 glow-card text-center relative overflow-hidden">
+                    
+                    <!-- Ambient Glow Effect behind ring -->
+                    <div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-app-emerald/15 rounded-full blur-3xl pointer-events-none"></div>
+
+                    <!-- Target Badge Tag -->
+                    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-200 text-[11px] font-bold text-purple-600 mb-3">
+                        <span>🎯 هدف فعال شماره ۱</span>
+                    </div>
+
+                    <!-- Glowing Circular Progress -->
+                    <div class="relative w-40 h-40 sm:w-48 sm:h-48 mx-auto my-2 flex items-center justify-center">
+                        <div class="absolute -inset-5 ring-halo opacity-70 pointer-events-none"></div>
+                        <svg class="w-full h-full glow-circle" viewBox="0 0 100 100">
+                            <!-- Background track -->
+                            <circle cx="50" cy="50" r="41" stroke="#E9E6F5" stroke-width="8" fill="none" />
+                            <!-- Gradient Progress track -->
+                            <circle id="goal-progress-circle" class="progress-ring-circle" cx="50" cy="50" r="41" stroke="url(#emeraldGradient)" stroke-width="9" stroke-dasharray="257.6" stroke-dashoffset="90" stroke-linecap="round" fill="none" />
+                            
+                            <defs>
+                                <linearGradient id="emeraldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#34D399" />
+                                    <stop offset="100%" stop-color="#10B981" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+
+                        <!-- Center Info -->
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <span id="goal-main-emoji" class="text-4xl mb-1 filter drop-shadow-md animate-bounce" style="animation-duration: 3s;">🎧</span>
+                            <span id="goal-main-percent" class="text-3xl font-black text-slate-900 tracking-tight">۶۵٪</span>
+                            <span class="text-[10px] text-slate-500 font-semibold mt-0.5">تا پیروزی</span>
+                        </div>
+                    </div>
+
+                    <h2 id="goal-main-title" class="text-lg font-black text-slate-900 mt-1">هدفون بی‌سیم سونی WH-1000</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">موعد تحویل رویایی: <span class="text-purple-600 font-bold">عید نوروز</span></p>
+
+                    <!-- Financial Balance Breakdown -->
+                    <div class="mt-5 p-3.5 bg-slate-50 rounded-2xl border border-slate-200 grid grid-cols-2 gap-2 text-right">
+                        <div>
+                            <div class="text-[10px] text-slate-500">جمع‌آوری شده:</div>
+                            <div id="goal-main-saved" class="text-sm font-black text-app-emerald">۲٬۲۷۵٬۰۰۰ تومان</div>
+                        </div>
+                        <div class="border-r border-slate-200 pr-3">
+                            <div class="text-[10px] text-slate-500">مبلغ نهایی:</div>
+                            <div id="goal-main-target" class="text-sm font-black text-slate-900">۳٬۵۰۰٬۰۰۰ تومان</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parent Sponsor Booster Box -->
+                <div class="bg-gradient-to-r from-amber-500/15 via-purple-500/10 to-pink-500/10 rounded-2xl p-4 border border-amber-300 flex items-center justify-between shadow-lg">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <div class="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl bg-amber-400/20 border border-amber-400/30 flex items-center justify-center text-xl sm:text-2xl">
+                            👨‍👦
+                        </div>
+                        <div>
+                            <div class="text-xs font-black text-amber-700 flex items-center gap-1">
+                                تعهد اسپانسری بابا
+                                <i data-lucide="check-circle" class="w-3.5 h-3.5 text-app-emerald"></i>
+                            </div>
+                            <div class="text-[10px] sm:text-[11px] text-slate-600 mt-0.5">
+                                ۱ میلیون تومن پاداش به شرط رسیدن به ۸۰٪
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="openParentInviteModal()" class="shrink-0 whitespace-nowrap px-2.5 py-1.5 rounded-xl bg-amber-400 text-black font-black text-[11px] hover:bg-amber-300 transition-all active:scale-95">
+                        دعوت والد
+                    </button>
+                </div>
+
+                <!-- Primary Interactive Action Buttons -->
+                <div class="space-y-2.5 pt-1">
+                    <!-- Big Chunky Deposit CTA -->
+                    <button onclick="openDepositSheet()" class="btn-shine w-full bg-gradient-to-r from-app-emerald via-teal-400 to-app-emerald text-white font-black py-3.5 px-6 rounded-2xl shadow-lg shadow-emerald-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-sm">
+                        <i data-lucide="sparkles" class="w-5 h-5 fill-black"></i>
+                        + پول ریختم به قلک!
+                    </button>
+
+                    <!-- Emergency / Smart Pause Trigger -->
+                    <button onclick="openWithdrawalModal()" class="w-full py-2 text-center text-xs text-slate-500 hover:text-rose-600 transition-colors flex items-center justify-center gap-1.5">
+                        <i data-lucide="alert-octagon" class="w-3.5 h-3.5 text-rose-600"></i>
+                        برداشت اضطراری از قلک
+                    </button>
+                </div>
+
+            </section>
+
+            <!-- TAB 2: 🎯 ALL TARGETS (Target Manager) -->
+            <section id="tab-targets" class="tab-content hidden space-y-4">
+                <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-black"><span class="text-gradient">اهداف من</span> 🎯</h2>
+                        <p class="text-xs text-slate-500">تمام رویاهایی که براشون برنامه داری</p>
+                    </div>
+                    <button onclick="openNewGoalModal()" class="bg-app-purple hover:bg-purple-600 text-white font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 transition-all">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i> هدف جدید
+                    </button>
+                </div>
+
+                <!-- Dynamic Goals List (rendered from state) -->
+                <div id="targets-list" class="space-y-4"></div>
+            </section>
+
+            <!-- TAB 3: ⚡ QUESTS & PARENT (Family Challenges) -->
+            <section id="tab-quests" class="tab-content hidden space-y-4">
+                <div>
+                    <h2 class="text-lg font-black text-slate-900">مأموریت‌ها و همیاری والد ⚡</h2>
+                    <p class="text-xs text-slate-500">چالش‌ها رو انجام بده و پاداش نقدی آزاد کن!</p>
+                </div>
+
+                <!-- Quest 1 -->
+                <div class="bg-gradient-to-br from-app-card to-purple-100/80 rounded-2xl p-4 border border-purple-300/60 space-y-3">
+                    <div class="flex items-start justify-between">
+                        <div class="flex gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-600 flex items-center justify-center text-xl shrink-0">
+                                📚
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-sm text-slate-900">نمره بالای ۱۹ امتحان نهایی ریاضی</h3>
+                                <div class="text-[11px] text-slate-500 mt-0.5">تعیین شده توسط: <span class="text-amber-600 font-bold">مامان</span></div>
+                            </div>
+                        </div>
+                        <span class="text-xs font-black px-2.5 py-1 rounded-xl bg-amber-100 text-amber-700 whitespace-nowrap shrink-0">+۳۰۰ هزار ت</span>
+                    </div>
+                    <button onclick="claimQuest(this, 300000, 100, 'quest-math')" data-quest-id="quest-math" class="w-full py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-purple-600/25">
+                        <i data-lucide="check" class="w-3.5 h-3.5"></i> ثبت انجام مأموریت و دریافت پاداش
+                    </button>
+                </div>
+
+                <!-- Quest 2 -->
+                <div class="bg-gradient-to-br from-app-card to-purple-100/80 rounded-2xl p-4 border border-purple-300/60 space-y-3">
+                    <div class="flex items-start justify-between">
+                        <div class="flex gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center text-xl shrink-0">
+                                🏃‍♂️
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-sm text-slate-900">۵ روز متوالی پیاده‌روی صبحگاهی</h3>
+                                <div class="text-[11px] text-slate-500 mt-0.5">تعیین شده توسط: <span class="text-amber-600 font-bold">بابا</span></div>
+                            </div>
+                        </div>
+                        <span class="text-xs font-black px-2.5 py-1 rounded-xl bg-amber-100 text-amber-700 whitespace-nowrap shrink-0">+۱۵۰ هزار ت</span>
+                    </div>
+                    <button onclick="claimQuest(this, 150000, 50, 'quest-walk')" data-quest-id="quest-walk" class="w-full py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-purple-600/25">
+                        <i data-lucide="check" class="w-3.5 h-3.5"></i> ثبت انجام مأموریت و دریافت پاداش
+                    </button>
+                </div>
+            </section>
+
+            <!-- TAB 4: 📊 BADGES & TIMELINE -->
+            <section id="tab-badges" class="tab-content hidden space-y-4">
+                <div>
+                    <h2 class="text-lg font-black text-slate-900">نشان‌های افتخار و تاریخچه 🏆</h2>
+                    <p class="text-xs text-slate-500">دستاوردهای مالی و عادات پول‌سازی تو</p>
+                </div>
+
+                <!-- Badges Grid -->
+                <div class="grid grid-cols-3 gap-2.5">
+                    <div class="badge-earned bg-app-card p-3 rounded-2xl border border-emerald-300 text-emerald-700 bg-emerald-50 text-center">
+                        <div class="text-2xl mb-1">🚀</div>
+                        <div class="text-[11px] font-bold text-slate-900">شروع طوفانی</div>
+                        <div class="text-[9px] text-emerald-600 font-semibold">کسب شده</div>
+                    </div>
+                    <div class="badge-earned bg-app-card p-3 rounded-2xl border border-purple-300 text-purple-700 bg-purple-50 text-center">
+                        <div class="text-2xl mb-1">🛡️</div>
+                        <div class="text-[11px] font-bold text-slate-900">سپر اراده</div>
+                        <div class="text-[9px] text-purple-600 font-semibold">۲ بار Smart Pause</div>
+                    </div>
+                    <div class="badge-locked bg-app-card p-3 rounded-2xl border border-slate-200 text-center">
+                        <div class="text-2xl mb-1">👑</div>
+                        <div class="text-[11px] font-bold text-slate-500">میلیونر تارگت</div>
+                        <div class="text-[9px] text-slate-500">قفل در ۵ میلیون</div>
+                    </div>
+                </div>
+
+                <!-- History Log -->
+                <div class="mt-4 bg-app-card rounded-2xl p-4 border border-slate-200">
+                    <h3 class="font-bold text-xs text-slate-600 mb-3">تاریخچه تراکنش‌های اخیر:</h3>
+                    <div id="history-list" class="space-y-2.5 text-xs"></div>
+                </div>
+
+                <!-- Danger Zone: full reset -->
+                <button onclick="resetAllData()" class="mt-4 w-full py-2 text-[11px] text-slate-500 hover:text-rose-600 transition-colors">
+                    🗑️ پاک کردن همه داده‌ها و شروع دوباره
+                </button>
+            </section>
+
+        </div>
+
+        <!-- MODAL 1: Quick Deposit Bottom Sheet -->
+        <div id="sheet-deposit" class="hidden fade-anim absolute inset-0 bg-slate-950/45 backdrop-blur-md z-40 flex flex-col justify-end" onclick="if(event.target===this)closeModals()">
+            <div class="sheet-anim bg-app-card rounded-t-[32px] p-6 border-t border-purple-500/30 shadow-2xl">
+                <div class="flex justify-between items-center mb-5">
+                    <div>
+                        <h3 class="text-base font-black text-slate-900">چقدر پول ریختی به قلک؟ 💰</h3>
+                        <p class="text-xs text-slate-500">مبلغ رو انتخاب کن تا به نوار هدف اضافه بشه</p>
+                    </div>
+                    <button onclick="closeModals()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center hover:text-slate-900">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <!-- Preset Chips -->
+                <div class="grid grid-cols-2 gap-2.5 mb-5">
+                    <button onclick="processDeposit(50000)" class="bg-slate-100 hover:bg-emerald-500/20 border border-slate-200 hover:border-emerald-500 text-slate-900 hover:text-emerald-600 font-black py-3 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 active:scale-95">
+                        <span>💵</span> + ۵۰ هزار تومن
+                    </button>
+                    <button onclick="processDeposit(100000)" class="bg-slate-100 hover:bg-emerald-500/20 border border-slate-200 hover:border-emerald-500 text-slate-900 hover:text-emerald-600 font-black py-3 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 active:scale-95">
+                        <span>💵</span> + ۱۰۰ هزار تومن
+                    </button>
+                    <button onclick="processDeposit(200000)" class="bg-slate-100 hover:bg-emerald-500/20 border border-slate-200 hover:border-emerald-500 text-slate-900 hover:text-emerald-600 font-black py-3 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 active:scale-95">
+                        <span>💵</span> + ۲۰۰ هزار تومن
+                    </button>
+                    <button onclick="processDeposit(500000)" class="bg-slate-100 hover:bg-emerald-500/20 border border-slate-200 hover:border-emerald-500 text-slate-900 hover:text-emerald-600 font-black py-3 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 active:scale-95">
+                        <span>💵</span> + ۵۰۰ هزار تومن
+                    </button>
+                </div>
+
+                <div class="text-[11px] text-center text-purple-600 bg-purple-500/10 rounded-xl py-2 border border-purple-200/80">
+                    با هر واریز، ۲۵ امتیاز XP و سکه طلایی دریافت می‌کنی! ✨
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL 2: Smart Pause Behavioral Friction Modal -->
+        <div id="modal-smart-pause" class="hidden fade-anim absolute inset-0 bg-slate-950/55 backdrop-blur-md z-40 p-6 flex flex-col justify-center" onclick="if(event.target===this)closeModals()">
+            <div class="pop-anim bg-slate-50 rounded-[32px] p-6 border-2 border-amber-400 text-center shadow-2xl relative overflow-hidden">
+                <div class="w-16 h-16 bg-amber-500/20 text-app-amber rounded-3xl flex items-center justify-center mx-auto mb-4 text-3xl border border-amber-300 animate-pulse">
+                    🛑
+                </div>
+                <h3 class="font-black text-slate-900 text-lg mb-1">یک لحظه نفس بکش رفیق!</h3>
+                <p class="text-xs text-slate-600 leading-relaxed mb-4">
+                    تو تا الان <span id="pause-percent" class="text-app-emerald font-black">۶۵٪</span> مسیر خرید هدفونت رو رفتی!  
+                    برداشتن این پول یعنی رسیدن به هدفت <span class="text-amber-600 font-black">۴۵ روز عقب میفته!</span>
+                </p>
+
+                <!-- 24h Countdown -->
+                <div class="bg-slate-100 rounded-2xl p-3.5 border border-slate-200 mb-5">
+                    <div class="text-[10px] text-slate-500 mb-1">تایمر تامل و مکث هوشمند:</div>
+                    <div class="font-mono text-2xl font-black text-amber-600" id="smart-pause-timer">۲۳:۵۹:۵۹</div>
+                </div>
+
+                <div class="space-y-2.5">
+                    <button onclick="closeModals(true)" class="w-full bg-gradient-to-r from-app-emerald to-teal-400 hover:bg-emerald-400 text-black font-black py-3.5 rounded-2xl text-xs transition-all shadow-lg shadow-emerald-500/25 active:scale-95">
+                        ✅ منصرف شدم؛ هدفونم مهم‌تره!
+                    </button>
+                    <button onclick="alert('مکث هوشمند ۲۴ ساعته ثبت شد. برای جلوگیری از خرید لحظه‌ای، فردا همین موقع مراجعه کنید.')" class="w-full text-slate-500 hover:text-slate-700 text-[11px] py-1">
+                        واقعاً نیاز اضطراری دارم (ادامه فرآیند)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL 3: New Goal Creator -->
+        <div id="modal-new-goal" class="hidden fade-anim absolute inset-0 bg-slate-950/45 backdrop-blur-md z-40 p-6 flex flex-col justify-end" onclick="if(event.target===this)closeModals()">
+            <div class="sheet-anim bg-app-card rounded-t-[28px] sm:rounded-t-[32px] p-5 sm:p-6 border border-purple-200/70 shadow-2xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-black text-slate-900 text-base">ساخت هدف جدید 🎯</h3>
+                    <button onclick="closeModals()" class="text-slate-500 hover:text-slate-900">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <form onsubmit="createNewGoal(event)" class="space-y-3.5 text-right">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 mb-1">نام هدف یا وسیله دلخواه:</label>
+                        <input type="text" id="new-goal-title" required placeholder="مثلاً: ساعت هوشمند شیائومی" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 text-xs focus:outline-none focus:border-app-purple">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 mb-1">مبلغ کل (تومان):</label>
+                            <input type="number" id="new-goal-price" required placeholder="۲۰۰۰۰۰۰" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 text-xs focus:outline-none focus:border-app-purple" dir="ltr">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 mb-1">اموجی آیکون:</label>
+                            <select id="new-goal-emoji" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 text-xs focus:outline-none focus:border-app-purple">
+                                <option value="⌚">⌚ ساعت هوشمند</option>
+                                <option value="📱">📱 گوشی جدید</option>
+                                <option value="🛹">🛹 اسکیت برد</option>
+                                <option value="🎸">🎸 گیتار / ساز</option>
+                                <option value="✈️">✈️ سفر با دوستان</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-app-purple hover:bg-purple-600 text-white font-black py-3 rounded-2xl text-xs transition-all shadow-lg shadow-purple-500/25 mt-2">
+                        ایجاد هدف و شروع پس‌انداز 🚀
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+    <div id="toast" class="hidden absolute top-20 left-1/2 -translate-x-1/2 z-[60] bg-white border border-purple-200 text-slate-900 text-xs font-bold px-5 py-3 rounded-2xl shadow-2xl max-w-[85%] text-center"></div>
+
+    <!-- MODAL 5: Emergency Withdrawal (multi-step) -->        <div id="modal-withdraw" class="hidden fade-anim absolute inset-0 bg-slate-950/55 backdrop-blur-md z-40 p-6 flex flex-col justify-center" onclick="if(event.target===this)closeModals()">
+            <div class="pop-anim bg-slate-50 rounded-[32px] p-6 border border-rose-300 shadow-2xl">
+            <!-- Step 1: Reason -->
+            <div id="wd-step-1">
+                <div class="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-600 flex items-center justify-center mx-auto mb-3 text-2xl">🛑</div>
+                <h3 class="font-black text-slate-900 text-base mb-1 text-center">برداشت اضطراری از قلک</h3>
+                <p class="text-xs text-slate-500 mb-4 text-center">دلیل برداشت رو انتخاب کن تا مسیر مناسب رو بهت نشون بدیم:</p>
+                <div class="space-y-2">
+                    <button onclick="wdSelectReason('نیاز پزشکی فوری', true)" class="w-full bg-slate-100 hover:bg-rose-500/10 border border-slate-200 hover:border-rose-500/50 text-slate-900 text-xs font-bold py-3 rounded-2xl text-right px-4 transition-all">🏥 نیاز پزشکی فوری</button>
+                    <button onclick="wdSelectReason('خرید ضروری مدرسه', true)" class="w-full bg-slate-100 hover:bg-rose-500/10 border border-slate-200 hover:border-rose-500/50 text-slate-900 text-xs font-bold py-3 rounded-2xl text-right px-4 transition-all">🎒 خرید ضروری مدرسه</button>
+                    <button onclick="wdSelectReason('وسوسه خرید لحظه‌ای', false)" class="w-full bg-slate-100 hover:bg-amber-500/10 border border-slate-200 hover:border-amber-500/50 text-slate-900 text-xs font-bold py-3 rounded-2xl text-right px-4 transition-all">🛍️ وسوسه خرید لحظه‌ای</button>
+                </div>
+                <button onclick="closeModals()" class="mt-3 w-full text-xs text-slate-500 hover:text-slate-900 py-1">انصراف</button>
+            </div>
+            <!-- Step 2: Amount -->
+            <div id="wd-step-2" class="hidden">
+                <h3 class="font-black text-slate-900 text-base mb-1 text-center">چقدر برمی‌داری؟</h3>
+                <p class="text-xs text-slate-500 mb-3 text-center">موجودی هدف فعلی: <span id="wd-balance" class="text-app-emerald font-black"></span></p>
+                <div class="grid grid-cols-2 gap-2 mb-3">
+                    <button onclick="wdQuick(100000)" class="bg-slate-100 border border-slate-200 text-slate-900 font-black py-3 rounded-2xl text-xs">۱۰۰ هزار ت</button>
+                    <button onclick="wdQuick(200000)" class="bg-slate-100 border border-slate-200 text-slate-900 font-black py-3 rounded-2xl text-xs">۲۰۰ هزار ت</button>
+                    <button onclick="wdQuick(500000)" class="bg-slate-100 border border-slate-200 text-slate-900 font-black py-3 rounded-2xl text-xs">۵۰۰ هزار ت</button>
+                    <button onclick="wdQuick(Infinity)" class="bg-slate-100 border border-slate-200 text-slate-900 font-black py-3 rounded-2xl text-xs">کل موجودی</button>
+                </div>
+                <button onclick="wdBack()" class="w-full text-xs text-slate-500 hover:text-slate-900 py-1">بازگشت</button>
+            </div>
+            <!-- Step 3: Reflection -->
+            <div id="wd-step-3" class="hidden text-center">
+                <div class="w-14 h-14 rounded-3xl bg-amber-500/20 text-app-amber flex items-center justify-center mx-auto mb-3 text-3xl border border-amber-300 animate-pulse">🤔</div>
+                <h3 class="font-black text-slate-900 text-base mb-1" id="wd-reflect-title">قبل از نهایی کردن، یه لحظه فکر کن</h3>
+                <p class="text-xs text-slate-600 leading-relaxed mb-4">با این برداشت، به هدفت <span id="wd-delay" class="text-amber-600 font-black"></span> عقب می‌افتی و پیشرفتت از <span id="wd-from" class="text-app-emerald font-black"></span> به <span id="wd-to" class="text-rose-600 font-black"></span> می‌رسه.</p>
+                <div class="bg-slate-100 rounded-2xl p-3 border border-slate-200 mb-4">
+                    <div class="text-[10px] text-slate-500 mb-1">تایمر تامل (اگه پشیمونی، لغو کن):</div>
+                    <div class="font-mono text-xl font-black text-amber-600" id="wd-timer">۰۰:۱۰:۰۰</div>
+                </div>
+                <button onclick="wdCancel()" class="w-full bg-gradient-to-r from-app-emerald to-teal-400 text-black font-black py-3.5 rounded-2xl text-xs mb-2 shadow-lg shadow-emerald-500/25 active:scale-95 transition-all">✅ پشیمون شدم؛ پولم می‌مونه!</button>
+                <button onclick="wdFinalize()" class="w-full text-rose-600 hover:text-rose-600 text-xs font-bold py-2">برداشت رو نهایی می‌کنم</button>
+            </div>
+            <!-- Step 4: Done -->
+            <div id="wd-step-4" class="hidden text-center">
+                <div class="w-14 h-14 rounded-3xl bg-rose-500/20 text-rose-600 flex items-center justify-center mx-auto mb-3 text-3xl">💸</div>
+                <h3 class="font-black text-slate-900 text-base mb-1">برداشت ثبت شد</h3>
+                <p class="text-xs text-slate-500 mb-1"><span id="wd-amount" class="text-rose-600 font-black"></span> از قلک برداشت شد.</p>
+                <p class="text-[11px] text-slate-500 mb-4">ولی رکاب خالی نمی‌مونه — دوباره شروع کن! 💪</p>
+                <button onclick="closeModals()" class="w-full bg-app-purple text-white font-black py-3 rounded-2xl text-xs">باشه، ادامه می‌دم</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: Parent Invite Modal -->
+        <div id="modal-parent-invite" class="hidden fade-anim absolute inset-0 bg-slate-950/45 backdrop-blur-md z-40 p-6 flex flex-col justify-center" onclick="if(event.target===this)closeModals()">
+            <div class="pop-anim bg-app-card rounded-[32px] p-6 border border-amber-300 text-center shadow-2xl">
+                <div class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-700 flex items-center justify-center mx-auto mb-3 text-2xl">
+                    👨‍👩‍👦
+                </div>
+                <h3 class="font-black text-slate-900 text-base mb-1">دعوت والد به اسپانسری هدف</h3>
+                <p class="text-xs text-slate-500 mb-4">متن زیر رو در واتساپ، بله یا ایتا برای پدر یا مادرت ارسال کن:</p>
+
+                <div class="bg-slate-50 rounded-2xl p-3.5 border border-slate-200 text-right text-xs text-slate-600 mb-4 leading-relaxed font-sans">
+                    «سلام بابا! من توی اپلیکیشن تارگت برای خرید هدفونم هدف گذاشتم و تا الان ۲.۲ میلیون جمع کردم. می‌تونی وارد لینک زیر بشی و قول پاداشت رو ثبت کنی تا با انگیزه بیشتر برم جلو: targetapp.ir/p/arman»
+                </div>
+
+                <button onclick="copyParentInvite()" id="btn-copy-invite" class="w-full bg-app-yellow hover:bg-yellow-300 text-black font-black py-3 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md">
+                    <i data-lucide="copy" class="w-4 h-4"></i> کپی کردن متن دعوت
+                </button>
+                <button onclick="closeModals()" class="mt-2 text-xs text-slate-500 hover:text-slate-900 py-1">بستن پنجره</button>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation Bar (Fixed 4 Tabs) -->
+        <nav class="absolute bottom-4 inset-x-5 bg-white/85 backdrop-blur-2xl border border-purple-200/80 px-3 py-2.5 z-30 flex justify-between items-center rounded-[26px] shadow-xl shadow-purple-900/10">
+            <button onclick="switchTab('home')" id="nav-home" class="nav-item nav-active flex flex-col items-center gap-1 text-app-emerald transition-all">
+                <i data-lucide="home" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">داشبورد</span>
+            </button>
+            <button onclick="switchTab('targets')" id="nav-targets" class="nav-item flex flex-col items-center gap-1 text-slate-500 hover:text-slate-900 transition-all">
+                <i data-lucide="target" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">اهداف</span>
+            </button>
+            <button onclick="switchTab('quests')" id="nav-quests" class="nav-item flex flex-col items-center gap-1 text-slate-500 hover:text-slate-900 transition-all">
+                <i data-lucide="zap" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">مأموریت‌ها</span>
+            </button>
+            <button onclick="switchTab('badges')" id="nav-badges" class="nav-item flex flex-col items-center gap-1 text-slate-500 hover:text-slate-900 transition-all">
+                <i data-lucide="trophy" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">افتخارات</span>
+            </button>
+        </nav>
+
+    </main>
+
+    <!-- Interactive Audio & State Logic -->
+    <script>
+        // ---------- State & Persistence (localStorage) ----------
+        const STORAGE_KEY = 'target_pwa_state_v1';
+
+        function seedState() {
+            return {
+                goals: {
+                    headphone: { title: 'هدفون بی‌سیم سونی WH-1000', emoji: '🎧', target: 3500000, current: 2275000 },
+                    shoes: { title: 'کتونی نایک ایر جردن', emoji: '👟', target: 4000000, current: 1600000 },
+                    ps5: { title: 'دسته بازی PS5', emoji: '🎮', target: 2500000, current: 2500000, completed: true, completedAt: 'تیر ۱۴۰۵' }
+                },
+                currentActiveGoal: 'headphone',
+                userXP: 350,
+                transactions: [
+                    { title: 'واریز پول جیبی هفتگی', amount: 200000, type: 'deposit', ts: Date.now() - 3 * 3600e3 },
+                    { title: 'پاداش تمیز کردن اتاق (مامان)', amount: 75000, type: 'reward', ts: Date.now() - 2 * 86400e3 }
+                ],
+                claimedQuests: [],
+                pendingWithdrawal: null
+            };
+        }
+
+        function loadState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch (e) {}
+            return seedState();
+        }
+
+        function saveState() {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+        }
+
+        let state = loadState();
+
+        // ---------- Small UI Helpers ----------
+        function fa(n) { return n.toLocaleString('fa-IR'); }
+
+        function countdownFa(ms) {
+            const total = Math.max(0, Math.floor(ms / 1000));
+            const pad = n => n.toLocaleString('fa-IR', { minimumIntegerDigits: 2, useGrouping: false });
+            const h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), s = total % 60;
+            return pad(h) + ':' + pad(m) + ':' + pad(s);
+        }
+
+        function timeAgoFa(ts) {
+            const mins = Math.floor((Date.now() - ts) / 60000);
+            if (mins < 1) return 'همین الان ✨';
+            if (mins < 60) return fa(mins) + ' دقیقه پیش';
+            const hrs = Math.floor(mins / 60);
+            if (hrs < 24) return fa(hrs) + ' ساعت پیش';
+            return fa(Math.floor(hrs / 24)) + ' روز پیش';
+        }
+
+        function toast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.remove('hidden');
+            clearTimeout(toast._t);
+            toast._t = setTimeout(() => t.classList.add('hidden'), 3000);
+        }
+
+        function userLevel() { return 1 + Math.floor(state.userXP / 300); }
+
+        function updateXPUI() {
+            document.getElementById('xp-text').innerText = fa(state.userXP) + ' XP';
+            document.getElementById('lvl-badge').innerText = 'Lvl ' + fa(userLevel());
+            const bar = document.getElementById('xp-bar');
+            if (bar) bar.style.width = (((state.userXP % 300) / 300) * 100).toFixed(1) + '%';
+        }
+
+        // Animated number count-up for the ring percent
+        function animatePercentTo(targetPercent) {
+            const el = document.getElementById('goal-main-percent');
+            const faToEn = s => (s || '').replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
+            const start = parseInt(faToEn(el.innerText).replace(/[^0-9]/g, '')) || 0;
+            if (start === targetPercent) { el.innerText = fa(targetPercent) + '٪'; return; }
+            const t0 = performance.now(), dur = 650;
+            function frame(t) {
+                const p = Math.min(1, (t - t0) / dur);
+                const eased = 1 - Math.pow(1 - p, 3);
+                el.innerText = fa(Math.round(start + (targetPercent - start) * eased)) + '٪';
+                if (p < 1) requestAnimationFrame(frame);
+            }
+            requestAnimationFrame(frame);
+        }
+
+        function updateGoalUI() {
+            const goal = state.goals[state.currentActiveGoal];
+            if (!goal) return;
+            const percent = Math.min(100, Math.round((goal.current / goal.target) * 100));
+
+            document.getElementById('goal-main-title').innerText = goal.title;
+            document.getElementById('goal-main-emoji').innerText = goal.emoji;
+            animatePercentTo(percent);
+            document.getElementById('pause-percent').innerText = fa(percent) + '٪';
+
+            document.getElementById('goal-main-saved').innerText = fa(goal.current) + ' تومان';
+            document.getElementById('goal-main-target').innerText = fa(goal.target) + ' تومان';
+
+            // SVG Progress: Circumference = 2 * PI * 41 ~= 257.6
+            const circumference = 257.6;
+            const offset = circumference - (percent / 100) * circumference;
+            document.getElementById('goal-progress-circle').style.strokeDashoffset = offset;
+
+            // Recalculate total wallet (completed goals' money is spent, exclude them)
+            let total = 0;
+            Object.entries(state.goals).forEach(([key, g]) => { if (!g.completed) total += g.current; });
+            document.getElementById('total-wallet').innerText = fa(total) + ' ت';
+
+            renderTargetsList();
+            saveState();
+        }
+
+        function switchGoal(key) {
+            state.currentActiveGoal = key;
+            saveState();
+            document.querySelectorAll('.goal-chip').forEach(b => {
+                b.classList.remove('bg-gradient-to-r', 'from-app-purple', 'to-indigo-600', 'text-white', 'shadow-md');
+                b.classList.add('bg-app-card', 'border', 'border-slate-200', 'text-slate-500');
+            });
+            const activeChip = document.getElementById('chip-' + key);
+            if (activeChip) {
+                activeChip.classList.remove('bg-app-card', 'border-slate-200', 'text-slate-500');
+                activeChip.classList.add('bg-gradient-to-r', 'from-app-purple', 'to-indigo-600', 'text-white', 'shadow-md');
+            }
+            updateGoalUI();
+        }
+
+        // Tab Navigation Switcher
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('text-app-emerald', 'nav-active');
+                el.classList.add('text-slate-500');
+            });
+
+            const panel = document.getElementById('tab-' + tabId);
+            panel.classList.remove('hidden');
+            // restart the entrance animation
+            panel.style.animation = 'none';
+            panel.offsetHeight;
+            panel.style.animation = '';
+
+            const nav = document.getElementById('nav-' + tabId);
+            nav.classList.remove('text-slate-500');
+            nav.classList.add('text-app-emerald', 'nav-active');
+        }
+
+        // Modal Handlers
+        let pauseTimerInterval = null;
+        let pauseSecondsLeft = 23 * 3600 + 59 * 60 + 59;
+        let pendingInterval = null;
+
+        function formatPauseTimer() {
+            document.getElementById('smart-pause-timer').innerText = countdownFa(pauseSecondsLeft * 1000);
+        }
+
+        function triggerSmartPause() {
+            document.getElementById('modal-smart-pause').classList.remove('hidden');
+            clearInterval(pauseTimerInterval);
+            pauseSecondsLeft = 23 * 3600 + 59 * 60 + 59;
+            formatPauseTimer();
+            pauseTimerInterval = setInterval(() => {
+                if (pauseSecondsLeft > 0) {
+                    pauseSecondsLeft--;
+                    formatPauseTimer();
+                } else {
+                    clearInterval(pauseTimerInterval);
+                }
+            }, 1000);
+        }
+        function openNewGoalModal() {
+            document.getElementById('modal-new-goal').classList.remove('hidden');
+        }
+
+        function openDepositSheet() {
+            document.getElementById('sheet-deposit').classList.remove('hidden');
+        }
+
+        function openParentInviteModal() {
+            document.getElementById('modal-parent-invite').classList.remove('hidden');
+        }
+        // ---------- Emergency Withdrawal Flow ----------
+        let wdReason = null, wdIsEmergency = false, wdTimer = null, wdSecondsLeft = 0, wdAmount = 0;
+
+        function wdShowStep(n) {
+            ['wd-step-1', 'wd-step-2', 'wd-step-3', 'wd-step-4'].forEach((id, i) => {
+                document.getElementById(id).classList.toggle('hidden', i !== n - 1);
+            });
+        }
+
+        function openWithdrawalModal() {
+            document.getElementById('modal-withdraw').classList.remove('hidden');
+            wdShowStep(1);
+        }
+
+        function wdSelectReason(reason, isEmergency) {
+            wdReason = reason;
+            wdIsEmergency = isEmergency;
+            const goal = state.goals[state.currentActiveGoal];
+            document.getElementById('wd-balance').innerText = fa(goal.current) + ' تومان';
+            wdShowStep(2);
+            if (!isEmergency) {
+                // Impulse buys get routed through Smart Pause friction first
+                closeModals();
+                triggerSmartPause();
+                toast('برای خرید لحظه‌ای اول تایمر مکث هوشمند فعال شد 🛑');
+            }
+        }
+
+        function wdQuick(amount) {
+            const goal = state.goals[state.currentActiveGoal];
+            wdAmount = Math.min(goal.current, amount === Infinity ? goal.current : amount);
+            if (wdAmount <= 0) { toast('موجودی این هدف خالیه!'); return; }
+
+            if (!wdIsEmergency) {
+                triggerSmartPause();
+                return;
+            }
+            wdShowReflection();
+        }
+
+        function wdShowReflection() {
+            const goal = state.goals[state.currentActiveGoal];
+            const newCurrent = Math.max(0, goal.current - wdAmount);
+            const dailyRate = goal.target / 45;
+            const delayDays = Math.ceil(wdAmount / dailyRate);
+            document.getElementById('wd-delay').innerText = fa(delayDays) + ' روز';
+            document.getElementById('wd-from').innerText = fa(Math.round((goal.current / goal.target) * 100)) + '٪';
+            document.getElementById('wd-to').innerText = fa(Math.round((newCurrent / goal.target) * 100)) + '٪';
+            wdShowStep(3);
+
+            clearInterval(wdTimer);
+            wdSecondsLeft = 10 * 60;
+            const tick = () => {
+                document.getElementById('wd-timer').innerText = countdownFa(wdSecondsLeft * 1000);
+                if (wdSecondsLeft <= 0) clearInterval(wdTimer);
+                else wdSecondsLeft--;
+            };
+            tick();
+            wdTimer = setInterval(tick, 1000);
+        }
+
+        function wdCancel() {
+            clearInterval(wdTimer);
+            closeModals();
+            toast('عالی بود! پولت سر جاش موند و اراده‌ت محکم‌تر شد 🛡️');
+            confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
+        }
+
+        function wdFinalize() {
+            clearInterval(wdTimer);
+            const goal = state.goals[state.currentActiveGoal];
+            goal.current = Math.max(0, goal.current - wdAmount);
+            if (goal.current < goal.target) goal.completed = false;
+            addTransaction('برداشت اضطراری: ' + wdReason, wdAmount, 'withdraw');
+            updateGoalUI();
+            document.getElementById('wd-amount').innerText = fa(wdAmount) + ' تومان';
+            wdShowStep(4);
+            playChime('coin');
+        }
+
+        function wdBack() {
+            wdShowStep(1);
+        }
+
+        function closeModals(celebrate = false) {
+            document.getElementById('sheet-deposit').classList.add('hidden');
+            document.getElementById('modal-smart-pause').classList.add('hidden');
+            document.getElementById('modal-new-goal').classList.add('hidden');
+            document.getElementById('modal-parent-invite').classList.add('hidden');
+            document.getElementById('modal-withdraw').classList.add('hidden');
+            clearInterval(pauseTimerInterval);
+            clearInterval(wdTimer);
+            pendingInterval = null;
+
+            if (celebrate) {
+                confetti({
+                    particleCount: 50,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            }
+        }
+
+        // Synthesized Web Audio Sound Generator
+        function playChime(type = 'coin') {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                if (type === 'coin') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(987.77, ctx.currentTime);
+                    osc.frequency.setValueAtTime(1318.51, ctx.currentTime + 0.08);
+                    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.35);
+                } else if (type === 'levelup') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
+                    osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2); // G5
+                    osc.frequency.setValueAtTime(1046.50, ctx.currentTime + 0.3); // C6
+                    gain.gain.setValueAtTime(0.25, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.5);
+                }
+            } catch (e) {}
+        }
+
+        // ---------- Single Ledger for all money movements ----------
+        function addTransaction(title, amount, type) {
+            state.transactions.unshift({ title, amount, type, ts: Date.now() });
+            if (state.transactions.length > 30) state.transactions.pop();
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = '';
+            if (!state.transactions.length) {
+                historyList.innerHTML = '<div class="text-center text-slate-500 py-4">هنوز تراکنشی ثبت نشده — اولین واریز رو انجام بده! 💰</div>';
+                return;
+            }
+            state.transactions.forEach(t => {
+                const isNeg = t.type === 'withdraw';
+                const logItem = document.createElement('div');
+                logItem.className = 'flex justify-between items-center pb-2 border-b border-slate-100';
+                logItem.innerHTML = `
+                    <div>
+                        <div class="font-bold text-slate-900">${t.title}</div>
+                        <div class="text-[10px] text-slate-500">${timeAgoFa(t.ts)}</div>
+                    </div>
+                    <span class="font-black ${isNeg ? 'text-app-pink' : 'text-app-emerald'}">${isNeg ? '−' : '+'}${fa(t.amount)} ت</span>
+                `;
+                historyList.appendChild(logItem);
+            });
+        }
+
+        // Deposit Action with XP & Confetti
+        function processDeposit(amount) {
+            const goal = state.goals[state.currentActiveGoal];
+            if (goal.completed) {
+                closeModals();
+                toast('این هدف تکمیل شده! یه هدف جدید بساز 🎯');
+                return;
+            }
+            goal.current = Math.min(goal.target, goal.current + amount);
+            if (goal.current >= goal.target && !goal.completed) {
+                goal.completed = true;
+                goal.completedAt = 'الان';
+                state.userXP += 200;
+                toast('🏆 هدف «' + goal.title + '» تکمیل شد! +۲۰۰ XP');
+                playChime('levelup');
+                confetti({ particleCount: 160, spread: 100, origin: { y: 0.4 } });
+            }
+            addTransaction('واریز به ' + goal.title, amount, 'deposit');
+            state.userXP += 25;
+            updateXPUI();
+            updateGoalUI();
+            closeModals();
+            if (!(goal.current >= goal.target)) {
+                playChime('coin');
+                confetti({ particleCount: 80, spread: 70, origin: { y: 0.7 } });
+            }
+        }
+
+        // Claim Parent Quest
+        function claimQuest(btn, reward, xpReward, questId) {
+            if (state.claimedQuests.includes(questId)) return;
+            state.claimedQuests.push(questId);
+            btn.disabled = true;
+            btn.className = "w-full py-2 rounded-xl bg-slate-100 text-emerald-600 font-bold text-xs flex items-center justify-center gap-1 border border-emerald-300 text-emerald-700 bg-emerald-50";
+            btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> پاداش دریافت و به قلک واریز شد!';
+            refreshIcons();
+
+            const goal = state.goals[state.currentActiveGoal];
+            goal.current = Math.min(goal.target, goal.current + reward);
+            addTransaction('پاداش مأموریت: ' + btn.closest('div.space-y-3').querySelector('h3').innerText, reward, 'reward');
+            state.userXP += 25 + xpReward;
+            updateXPUI();
+            updateGoalUI();
+            playChime('levelup');
+            confetti({ particleCount: 100, spread: 80, origin: { y: 0.7 } });
+        }
+
+        // Create New Goal
+        function createNewGoal(e) {
+            e.preventDefault();
+            const title = document.getElementById('new-goal-title').value;
+            const price = parseInt(document.getElementById('new-goal-price').value);
+            const emoji = document.getElementById('new-goal-emoji').value;
+
+            const key = 'goal_' + Date.now();
+            state.goals[key] = { title, emoji, target: price, current: 0 };
+
+            addGoalChip(key);
+            closeModals();
+            switchGoal(key);
+            playChime('levelup');
+            confetti({ particleCount: 60, spread: 80, origin: { y: 0.6 } });
+        }
+
+        function addGoalChip(key) {
+            const g = state.goals[key];
+            if (document.getElementById('chip-' + key)) return;
+            const addBtn = document.getElementById('chip-add-goal');
+            const chip = document.createElement('button');
+            chip.id = 'chip-' + key;
+            chip.className = 'goal-chip px-3.5 py-2 rounded-2xl text-xs font-bold bg-app-card border border-slate-200 text-slate-500 whitespace-nowrap flex items-center gap-1.5 hover:text-slate-900 transition-all';
+            chip.innerHTML = '<span>' + g.emoji + '</span> ' + g.title;
+            chip.onclick = () => switchGoal(key);
+            addBtn.parentElement.insertBefore(chip, addBtn);
+        }
+
+        // ---------- Dynamic Targets List (اهداف tab) ----------
+        function renderTargetsList() {
+            const list = document.getElementById('targets-list');
+            if (!list) return;
+            list.innerHTML = '';
+            Object.entries(state.goals).forEach(([key, g]) => {
+                const percent = Math.min(100, Math.round((g.current / g.target) * 100));
+                const done = g.current >= g.target;
+                const active = key === state.currentActiveGoal;
+                const card = document.createElement('button');
+                card.className = 'w-full text-right bg-app-card rounded-2xl p-4 space-y-3 transition-all ' +
+                    (done ? 'border border-emerald-500/40 opacity-90' : active ? 'border border-purple-300/70 glow-card' : 'border border-slate-200');
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="text-3xl">${g.emoji}</span>
+                            <div>
+                                <h3 class="font-bold text-sm text-slate-900 ${done ? 'line-through text-slate-500' : ''}">${g.title}</h3>
+                                <div class="text-[11px] ${done ? 'text-emerald-600 font-bold' : 'text-slate-500'}">${done ? 'خریداری شده ' + (g.completedAt || '') + ' ✅' : fa(g.current) + ' از ' + fa(g.target) + ' ت'}</div>
+                            </div>
+                        </div>
+                        <span class="text-xs font-black px-2.5 py-1 rounded-xl ${done ? 'bg-emerald-500/20 text-emerald-600' : active ? 'bg-purple-500/20 text-purple-600 border border-purple-300 text-purple-700 bg-purple-50' : 'bg-slate-100 text-slate-600'}">${fa(percent)}٪</span>
+                    </div>
+                    <div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full ${done ? 'bg-gradient-to-r from-emerald-500 to-emerald-300' : 'bg-gradient-to-r from-purple-500 to-indigo-400'}" style="width: ${percent}%"></div>
+                    </div>
+                `;
+                card.onclick = () => {
+                    switchGoal(key);
+                    switchTab('home');
+                };
+                list.appendChild(card);
+            });
+        }
+
+        // ---------- Full Reset ----------
+        function resetAllData() {
+            if (!confirm('مطمئنی؟ همه اهداف، پول‌ها و نشان‌هات پاک می‌شن و از صفر شروع می‌کنی.')) return;
+            localStorage.removeItem(STORAGE_KEY);
+            location.reload();
+        }
+
+        function copyParentInvite() {
+            const inviteText = document.querySelector('#modal-parent-invite .bg-slate-90, #modal-parent-invite .bg-slate-50\\/90').innerText;
+            if (navigator.clipboard) navigator.clipboard.writeText(inviteText).catch(() => {});
+            const btn = document.getElementById('btn-copy-invite');
+            btn.innerHTML = 'کپی شد! به واتساپ/بله برید ✅';
+            btn.classList.add('bg-emerald-400');
+            setTimeout(() => {
+                closeModals();
+            }, 1000);
+        }
+
+        // Safe icon refresher — never crashes if the CDN fails
+        function refreshIcons() {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        }
+
+        // PWA: register service worker for offline use
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(() => {});
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshIcons();
+
+            // Restore persisted state into the UI
+            updateXPUI();
+            updateGoalUI();          // also renders targets list + saves
+            renderHistory();
+
+            // Ensure every goal has a switcher chip
+            Object.keys(state.goals).forEach(addGoalChip);
+            switchGoal(state.currentActiveGoal);
+
+            // Restore claimed quests
+            state.claimedQuests.forEach(qid => {
+                const btn = document.querySelector(`[data-quest-id="${qid}"]`);
+                if (btn) {
+                    btn.disabled = true;
+                    btn.className = "w-full py-2 rounded-xl bg-slate-100 text-emerald-600 font-bold text-xs flex items-center justify-center gap-1 border border-emerald-300 text-emerald-700 bg-emerald-50";
+                    btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> پاداش دریافت و به قلک واریز شد!';
+                }
+            });
+            refreshIcons();
+        });
+    </script>
+</body>
+</html>
